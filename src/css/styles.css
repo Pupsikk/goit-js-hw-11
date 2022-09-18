@@ -13,13 +13,16 @@ a {
 }
 
 .form {
-    display: flex;
+    width: 100%;
+    background: linear-gradient(90deg,#050b5c,#1a73e8);
     justify-content: center;
-    background-image: url(../images/st01.jpg);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-size: cover;
-    min-height: 100px;
+    align-items: center;
+    padding: 25px 0;
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-shadow: 0 3px 5px rgb(0 4 56 / 50%);
 }
 
 
@@ -38,12 +41,13 @@ input {
 }
 
 button.imput {
-    width: 150px;
-    height: 30px;
-    font-size: 20px;
-    background-color: gold;
-    border-radius: 8px;
+    width: 100px;
+    height: 40px;
     cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: font-weight .25s linear,color .25s linear,background-color .25s linear;
 }
 
 .photo-card {
@@ -66,7 +70,7 @@ button.imput {
 
 
 .one {
-    background-image: url(../images/st01.jpg);
+    background-color: brown ;
     background-repeat: no-repeat;
     background-position: center center;
     background-attachment: fixed;
@@ -76,8 +80,15 @@ button.imput {
 
 }
 
-.search-form {
-    margin-top: 10px;
+.search-form__input {
+    width: 300px;
+    height: 40px;
+    border: none;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    outline: none;
+    padding: 10px;
+    font-size: 16px;
 }
 
 .info {
@@ -105,7 +116,7 @@ button.load-more {
     text-decoration: none;
     outline: none;
     color: #fff;
-    background-color: goldenrod;
+    background-color: burlywood;
     border: none;
     border-radius: 15px;
     box-shadow: 0 4px #999;
