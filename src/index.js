@@ -1,107 +1,72 @@
-import GalleryApiService from './js/api-servise';
-import { Notify } from 'notiflix';
-import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import LoadMoreBtn from './js/load-more-button';
+import { fetchGallery } from './js/fetchgallery';
+import { Notify } from 'notiflix';
+import axios from 'axios';
+import PictureService from './js/fetchgallery'
 
-// На завтра : 1. пофиксить консоль лог (ошибка)
-
-const refs = {
-  galleryWrap: document.querySelector('.gallery'),
-  form: document.querySelector('#search-form'),
-  // loadMoreBtn: document.querySelector('.load-more'),
-  endText: document.querySelector('.end__text'),
-  btn_anchor: document.querySelector('.button-anchor'),
+const pictureService = new PictureService()
+const INFO_MASSAGE = "We're sorry, but you've reached the end of search results."
+const ERROR_MASSAGE = '"Sorry, there are no images matching your search query. Please try again."'
+const OPTIONS_NOTIFLIX = {
+    width: "460px",
+    fontSize: "25px",
 };
 
-console.log(refs.btn_anchor);
-const loadMoreBtn = new LoadMoreBtn({
-  cls: '.load-more',
-  hidden: true,
-});
-const galleryApiService = new GalleryApiService();
-let lightbox = {};
+let lightbox = {}
 
-console.log(loadMoreBtn);
+const galleryWrap = document.querySelector('.gallery')
+const form = document.querySelector('#search-form')
+const loadMoreBtn = document.querySelector('.load-more')
+loadMoreBtn.classList.add('is-hidden')
 
-refs.form.addEventListener('submit', onSearch);
-loadMoreBtn.refs.btn.addEventListener('click', onLoadMore);
+form.addEventListener('submit', onSearch)
+loadMoreBtn.addEventListener('click', onLoadMore)
+
+loadMoreBtn.classList.add('is-hidden')
+
 
 async function onSearch(e) {
-  e.preventDefault();
+  e.preventDefault()
 
-  clearGalleryMarkup();
-  galleryApiService.searchQuery =
-    e.currentTarget.elements.searchQuery.value.trim();
+  clearGalleryMarkup()
+  pictureService.query = e.currentTarget.elements.searchQuery.value.trim()
 
-  console.log(galleryApiService.searchQuery);
+  if (!pictureService.query) {
 
-  if (!galleryApiService.searchQuery) {
-    clearGalleryMarkup();
-    Notify.warning('Please write something');
-    loadMoreBtn.hide();
-    refs.endText.classList.add('is-hidden');
-    refs.form.reset();
-    refs.btn_anchor.classList.add('is-hidden');
+    Notify.warning('Please write something', OPTIONS_NOTIFLIX)
+    clearGalleryMarkup()
+    loadMoreBtn.classList.add('is-hidden')
+    form.reset()
     return;
   }
 
-  loadMoreBtn.hide();
-
-  refs.endText.classList.add('is-hidden');
-
-  galleryApiService.resetPage();
-
-  const filesFromBackEnd = await galleryApiService.fetchGallery();
-
-  createGalleryMarkup(filesFromBackEnd.data.hits);
-  loadMoreBtn.enable();
-  onSubmitControl(filesFromBackEnd);
-
-  lightbox = new SimpleLightbox('.gallery a', {
-    captionsData: 'alt',
-    captionDelay: 250,
-  });
-
-  refs.form.reset();
-}
-
-function onSubmitControl(filesFromBackEnd) {
-  if (filesFromBackEnd.data.total > 500) {
-    Notify.success(
-      `Hooray! We found ${filesFromBackEnd.data.total} images, but we can only show the first ${filesFromBackEnd.data.totalHits}!`
-    );
-    loadMoreBtn.show();
-    refs.btn_anchor.classList.remove('is-hidden');
-  } else if (
-    filesFromBackEnd.data.total > 40 &&
-    filesFromBackEnd.data.total <= 500
-  ) {
-    Notify.success(`Hooray! We found ${filesFromBackEnd.data.total} images!`);
-    loadMoreBtn.show();
-    refs.btn_anchor.classList.remove('is-hidden');
-    refs.endText.classList.add('is-hidden');
-  } else if (
-    filesFromBackEnd.data.totalHits > 0 &&
-    filesFromBackEnd.data.totalHits <= 40
-  ) {
-    Notify.success(`Hooray! We found ${filesFromBackEnd.data.total} images!`);
-    loadMoreBtn.hide();
-    refs.endText.classList.remove('is-hidden');
-    refs.btn_anchor.classList.remove('is-hidden');
-  } else if (filesFromBackEnd.data.total === 0) {
-    Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
-    loadMoreBtn.hide();
-    refs.btn_anchor.classList.add('is-hidden');
+  pictureService.resetPage()
+  const responspictureService = await pictureService.fetchGallery()
+  await createGalleryMarkup(responspictureService.data.hits)
+  if (responspictureService.data.total > 500) {
+    Notify.info(`По вашему запросу было найдено ${responspictureService.data.total} совпадений, но показать сможем только 500 :) `, OPTIONS_NOTIFLIX)
+  } else {
+    Notify.info(`По вашему запросу было найдено ${responspictureService.data.total} совпадений `, OPTIONS_NOTIFLIX)
   }
+  form.reset()
+  lightbox = new SimpleLightbox(".gallery a", {
+  captionsData: "alt",
+  captionDelay: 250,
+  })
 }
 
 function createGalleryMarkup(cards) {
-  console.log(cards);
-  refs.galleryWrap.insertAdjacentHTML(
+  // console.log(cards)
+  // if (cards.length < 40 && cards.length > 0) {
+  //   Notify.info(INFO_MASSAGE, OPTIONS_NOTIFLIX)
+  //   loadMoreBtn.classList.add('is-hidden')
+  // } if (cards.length === 0) {
+  //   Notify.info(ERROR_MASSAGE, OPTIONS_NOTIFLIX)
+  //   loadMoreBtn.classList.add('is-hidden')
+  // }
+
+  galleryWrap.insertAdjacentHTML(
     'beforeend',
     cards
       .map(
@@ -113,132 +78,58 @@ function createGalleryMarkup(cards) {
           views,
           comments,
           downloads,
-        }) => `<div class="photo-card">
+        }) => `
+        <div class="photo-card">
       <a href="${largeImageURL}">
-        <img src="${webformatURL}" alt="${tags}" loading="lazy" height ="300" width = "400" />
+        <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+        </a>
         <div class="info">
           <p class="info-item">
-            <b>Likes: ${likes}</b>
+            <b>Likes: <br> ${likes}</b>
           </p>
           <p class="info-item">
-            <b>Views: ${views}</b>
+            <b>Views: <br> ${views}</b>
           </p>
           <p class="info-item">
-            <b>Comments: ${comments}</b>
+            <b>Comments: <br> ${comments}</b>
           </p>
           <p class="info-item">
-            <b>Downloads: ${downloads}</b>
+            <b>Downloads: <br> ${downloads}</b>
           </p>
         </div>
-        </a>
-      </div>`
+        
+      </div>
+      `
       )
       .join('')
-  );
+  )
+  loadMoreBtn.classList.remove('is-hidden')
+  if (cards.length < 40 && cards.length > 0) {
+    Notify.info(INFO_MASSAGE, OPTIONS_NOTIFLIX)
+    loadMoreBtn.classList.add('is-hidden')
+  } if (cards.length === 0) {
+    Notify.info(ERROR_MASSAGE, OPTIONS_NOTIFLIX)
+    loadMoreBtn.classList.add('is-hidden')
+  }
+  // else {
+    // loadMoreBtn.classList.remove('is-hidden')
+  // }
+  
+  
 }
 
 function clearGalleryMarkup() {
-  refs.galleryWrap.innerHTML = '';
+  galleryWrap.innerHTML = ""
 }
 
 async function onLoadMore() {
-  const filesFromBackEnd = await galleryApiService.fetchGallery();
-  createGalleryMarkup(filesFromBackEnd.data.hits);
-  console.log(filesFromBackEnd.data.hits);
-  if (
-    filesFromBackEnd.data.hits.length >= 0 &&
-    filesFromBackEnd.data.hits.length < 40
-  ) {
-    Notify.info("We're sorry, but you've reached the end of search results.");
-    loadMoreBtn.hide();
-    refs.endText.classList.remove('is-hidden');
-  } else if (galleryApiService.page === 13) {
-    Notify.info("We're sorry, but you've reached the end of search results.");
-    loadMoreBtn.hide();
-    refs.endText.classList.remove('is-hidden');
-  }
-  lightbox.refresh();
+
+  const responspictureService = await pictureService.fetchGallery()
+  await createGalleryMarkup(responspictureService.data.hits)
+  if (pictureService.page === 13) {
+      Notify.info(INFO_MASSAGE, OPTIONS_NOTIFLIX)
+      loadMoreBtn.classList.add('is-hidden')
+      }
+  lightbox.refresh()
 }
-
-// import SimpleLightbox from 'simplelightbox';
-// import 'simplelightbox/dist/simple-lightbox.min.css';
-// import GalleryApiService from './js/api-servise';
-// import { Notify } from 'notiflix';
-// import axios from 'axios';
-// import GalleryApiService from './js/api-servise';
-
-// const refs = {
-//   galleryWrap: document.querySelector('.gallery'),
-//   form: document.querySelector('#search-form'),
-//   loadMoreBtn: document.querySelector('.load-more'),
-// };
-
-// const galleryApiService = new GalleryApiService();
-
-// let page = 1;
-// let perPage = 40;
-// let searchQuery = '';
-
-// refs.form.addEventListener('submit', onSearch);
-// refs.loadMoreBtn.addEventListener('click', onLoadMore);
-
-// async function onSearch(e) {
-//   e.preventDefault();
-
-//   searchQuery = e.currentTarget.elements.searchQuery.value.trim();
-//   console.log(searchQuery);
-//   if (!searchQuery) {
-//     clearGalleryMarkup();
-//     Notify.warning('Please write something');
-//     return;
-//   }
-
-//   const aaa = await fetchGallery(searchQuery, page, perPage);
-
-//   createGalleryMarkup(aaa.data.hits);
-//   refs.form.reset();
-// }
-
-// function createGalleryMarkup(cards) {
-//   console.log(cards);
-//   refs.galleryWrap.insertAdjacentHTML(
-//     'beforeend',
-//     cards
-//       .map(
-//         ({
-//           webformatURL,
-//           largeImageURL,
-//           tags,
-//           likes,
-//           views,
-//           comments,
-//           downloads,
-//         }) => `<div class="photo-card">
-//       <a href="${largeImageURL}">
-//         <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-//         <div class="info">
-//           <p class="info-item">
-//             <b>Likes: ${likes}</b>
-//           </p>
-//           <p class="info-item">
-//             <b>Views: ${views}</b>
-//           </p>
-//           <p class="info-item">
-//             <b>Comments: ${comments}</b>
-//           </p>
-//           <p class="info-item">
-//             <b>Downloads: ${downloads}</b>
-//           </p>
-//         </div>
-//         </a>
-//       </div>`
-//       )
-//       .join('')
-//   );
-// }
-
-// function clearGalleryMarkup() {
-//   refs.galleryWrap.innerHTML = '';
-// }
-
-// function onLoadMore() {}
+ 
